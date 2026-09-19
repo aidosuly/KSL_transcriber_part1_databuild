@@ -1,18 +1,5 @@
 # KSL Live Transcriber — Python desktop version
 
-Same Phase 1 idea as the browser version in the repo root — train it on a
-handful of examples per sign, then recognize live and build a Kazakh
-transcript — but as a Python/Tkinter desktop app using OpenCV + MediaPipe
-instead of a browser. See the [top-level README](../README.md) and
-[`docs/roadmap.md`](../docs/roadmap.md) for the overall project context.
-
-Why a Python version at all, alongside the browser one: Phase 2 (building a
-real dataset from KSL-interpreted news footage — speech-to-text, alignment,
-a much bigger corpus) is naturally a Python project. Having Phase 1 already
-in Python too means the hand-tracking and classifier code
-(`ksl_transcriber/hand_tracking.py`) can be reused directly when that
-pipeline gets built, rather than ported from JavaScript at that point.
-
 ## Setup
 
 Requires Python 3.10+.
