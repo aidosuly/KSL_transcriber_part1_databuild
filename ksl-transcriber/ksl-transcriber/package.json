@@ -1,0 +1,10 @@
+{
+  "name": "ksl-live-transcriber",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Phase 1 prototype: trainable live Kazakh Sign Language transcriber (browser-based, MediaPipe Hands).",
+  "scripts": {
+    "start": "npx --yes http-server -c-1 ."
+  },
+  "license": "UNLICENSED"
+}

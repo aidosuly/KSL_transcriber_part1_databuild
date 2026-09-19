@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KSL Live Transcriber — Phase 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>KSL Live Transcriber</h1>
+      <p>Live hand-sign recognition trained by you, transcribing straight into Kazakh text — no translation step needed, since the signs already are Kazakh.</p>
+    </div>
+    <span class="badge">Phase <b>1</b> of 3 · trainable prototype</span>
+  </header>
+
+  <details class="roadmap">
+    <summary>Where this fits in the bigger plan</summary>
+    <div class="phases">
+      <div class="phase active">
+        <div class="num">01 — now</div>
+        <h3>Trainable transcriber</h3>
+        <p>Alphabet, digits, and essential words — plus any word you add yourself. You record a few examples of each sign; a nearest-neighbor matcher recognizes them live and builds a Kazakh transcript. Every recording is a labeled data point.</p>
+      </div>
+      <div class="phase">
+        <div class="num">02 — next</div>
+        <h3>Corpus from news footage</h3>
+        <p>Run speech-to-text on KSL-interpreted news video, then align the spoken transcript to the interpreter's signs with human review — turning hours of footage into a large labeled sign↔word database. See <code>docs/roadmap.md</code>.</p>
+      </div>
+      <div class="phase">
+        <div class="num">03 — later</div>
+        <h3>Two-way voiceover</h3>
+        <p>A model trained on that database reads signs aloud as speech, and speech back into signs, so a hearing person and a KSL signer can talk directly, in both directions.</p>
+      </div>
+    </div>
+  </details>
+
+  <div class="grid">
+    <!-- LEFT: camera -->
+    <div class="panel">
+      <h2>Camera</h2>
+      <div class="camwrap" id="camwrap">
+        <video id="video" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div class="hint" id="camhint">Click "Start camera" below.<br><span style="font-size:0.78rem;opacity:.75;">Uses MediaPipe Hands, loaded from a CDN — needs an internet connection the first time.</span></div>
+      </div>
+      <div class="cam-controls">
+        <button class="primary" id="btnStart">Start camera</button>
+        <button id="btnStop" disabled>Stop camera</button>
+        <span class="badge" id="handBadge">Hands: 0</span>
+      </div>
+      <div class="status-row">
+        <span>Mode: <b id="modeLabel">Alphabet</b></span>
+        <span>Recognition: <b id="recogLabel">off</b></span>
+      </div>
+
+      <div class="pred-card">
+        <div class="pred-symbol empty" id="predSymbol">—</div>
+        <div class="pred-meta">
+          <div class="label" id="predLabelText">No prediction yet</div>
+          <div class="conf-bar"><i id="predConf"></i></div>
+        </div>
+        <button class="ghost small" id="btnAddSymbol" title="Add current prediction (Space)">+ Add</button>
+      </div>
+      <p class="note">Space = add current sign · Enter = finish word · Backspace = delete</p>
+    </div>
+
+    <!-- RIGHT: tabs -->
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="train">Train</button>
+        <button class="tab-btn" data-tab="recognize">Recognize</button>
+        <button class="tab-btn" data-tab="data">Data</button>
+      </div>
+
+      <!-- TRAIN -->
+      <div class="tab-panel active" id="tab-train">
+        <div class="cat-row" id="catRowTrain"></div>
+        <div class="add-word-panel" id="addWordPanel" hidden>
+          <input type="text" id="newWordKk" placeholder="New Kazakh word (e.g. Дәрігер)">
+          <input type="text" id="newWordGloss" placeholder="Gloss / meaning (e.g. doctor)">
+          <button class="primary small" id="btnAddWord">+ Add word</button>
+        </div>
+        <div class="label-grid" id="labelGrid"></div>
+        <div class="train-controls">
+          <div class="cur" id="trainCur">—</div>
+          <div class="cur-gloss" id="trainGloss">Pick a label above to train it.</div>
+          <button class="primary small" id="btnRecord" disabled>● Record (1.5s)</button>
+        </div>
+        <div class="progress" id="recProgress"><i id="recProgressBar"></i></div>
+        <p class="note">Hold the sign steady in frame, then click Record. It captures a short burst of frames. Repeat 5–10× per label from slightly different angles for better accuracy.</p>
+      </div>
+
+      <!-- RECOGNIZE -->
+      <div class="tab-panel" id="tab-recognize">
+        <div class="cat-row" id="catRowRecog"></div>
+        <div class="toggle-row">
+          <label class="switch"><input type="checkbox" id="chkRecognize"><span class="slider"></span></label>
+          <span>Recognition running</span>
+        </div>
+        <div class="toggle-row">
+          <label class="switch"><input type="checkbox" id="chkAuto"><span class="slider"></span></label>
+          <span>Auto-commit stable signs (else use Space / + Add)</span>
+        </div>
+        <p class="note">Recognition only compares against labels in the selected category — narrower category, more accurate matches, especially with few samples.</p>
+      </div>
+
+      <!-- DATA -->
+      <div class="tab-panel" id="tab-data">
+        <div class="stat-row">
+          <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Samples</div></div>
+          <div class="stat"><div class="n" id="statLabels">0</div><div class="l">Labels with data</div></div>
+          <div class="stat"><div class="n" id="statCoverage">0%</div><div class="l">Alphabet+digits covered</div></div>
+        </div>
+        <div class="data-scroll">
+          <table class="kv-table" id="dataTable">
+            <thead><tr><th>Label</th><th>Category</th><th>Samples</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="cam-controls">
+          <button id="btnExport">Export dataset (.json)</button>
+          <button id="btnImport">Import dataset</button>
+          <input type="file" id="fileImport" accept="application/json" hidden>
+          <button class="danger" id="btnReset">Reset all data</button>
+        </div>
+        <p class="note">Data auto-saves to this browser only. Export regularly — the export file is exactly the labeled dataset the Phase 2 model training will eventually build on.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSCRIPT -->
+  <div class="transcript-panel">
+    <h2 style="margin:0 0 10px;font-size:1rem;">Transcript</h2>
+    <div class="buffer-line">Buffer: <span id="bufferText"></span><span class="cursor">▌</span></div>
+    <textarea id="transcript" readonly placeholder="Recognized Kazakh text will build up here…"></textarea>
+    <div class="transcript-controls">
+      <button id="btnSpace">Space</button>
+      <button id="btnFinishWord">⏎ Finish word</button>
+      <button id="btnBackspace">⌫ Backspace</button>
+      <button id="btnClear">Clear</button>
+      <button id="btnCopy">Copy</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+<script src="js/labels.js"></script>
+<script src="js/dataset.js"></script>
+<script src="js/hand-tracking.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

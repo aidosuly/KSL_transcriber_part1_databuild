@@ -1,0 +1,10 @@
+# Pinned below 1.0: MediaPipe 1.x removed the legacy mp.solutions.hands API
+# this app uses (it moved to a Tasks API that needs a separately-downloaded
+# .task model file). The 0.10.x line bundles its hand-tracking model inside
+# the package itself, so there's no extra download step for the user.
+mediapipe>=0.10.13,<1.0
+
+# mediapipe 0.10.x pins numpy<2; keep opencv on a compatible line too.
+numpy<2
+opencv-python-headless>=4.8
+pillow>=10.0
