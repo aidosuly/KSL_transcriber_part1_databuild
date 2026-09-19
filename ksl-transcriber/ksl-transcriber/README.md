@@ -5,22 +5,11 @@ hand with MediaPipe, learns signs from a handful of examples you record
 yourself, and recognizes them live to build up a Kazakh-language transcript
 — no translation step needed, since the signs already are Kazakh words.
 
-This is **Phase 1** of a three-phase plan. See [`docs/roadmap.md`](docs/roadmap.md)
-for Phases 2 (building a real dataset from KSL-interpreted news footage) and
-3 (two-way voiceover, so a hearing person and a KSL signer can talk
-directly). [`docs/architecture.md`](docs/architecture.md) covers how the
-code is organized and how the recognition actually works.
-
-Two implementations of Phase 1 live in this repo, built to the same feature
-set and the same dataset format (a `.json` exported from one imports
-straight into the other):
-
 - **Browser version** (this folder, `index.html`) — zero install, opens in
   Chrome/Edge, easiest to try or hand to someone else.
 - **Python desktop version** ([`python/`](python/)) — OpenCV + MediaPipe +
-  Tkinter. More setup (a venv, a few pip installs), but it's the natural
-  base for Phase 2's video/audio processing pipeline, which will be Python
-  regardless. See [`python/README.md`](python/README.md).
+  Tkinter. More setup (a venv, a few pip installs).
+  See [`python/README.md`](python/README.md).
 
 The rest of this file covers the browser version.
 
